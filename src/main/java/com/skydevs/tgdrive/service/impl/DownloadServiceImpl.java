@@ -8,6 +8,17 @@ import com.skydevs.tgdrive.mapper.FileMapper;
 import com.skydevs.tgdrive.service.BotService;
 import com.skydevs.tgdrive.service.DownloadService;
 import com.skydevs.tgdrive.utils.OkHttpClientFactory;
+import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -21,28 +32,18 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 @Service
 @Slf4j
 public class DownloadServiceImpl implements DownloadService {
 
     @Autowired
     private BotService botService;
+
     @Autowired
     private FileMapper fileMapper;
 
-    private final OkHttpClient okHttpClient = OkHttpClientFactory.createClient();
+    private final OkHttpClient okHttpClient =
+        OkHttpClientFactory.createClient();
 
     /**
      * 下载文件
@@ -51,8 +52,10 @@ public class DownloadServiceImpl implements DownloadService {
      */
     @Override
     public ResponseEntity<StreamingResponseBody> downloadFile(String fileID) {
-        try (InputStream inputStream = downloadFileInputStream(fileID);
-             ByteArrayOutputStream buffer = new ByteArrayOutputStream()){
+        try (
+            InputStream inputStream = downloadFileInputStream(fileID);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream()
+        ) {
             byte[] data = new byte[8192];
             int byteRead;
             while ((byteRead = inputStream.read(data)) != -1) {
@@ -60,8 +63,10 @@ public class DownloadServiceImpl implements DownloadService {
             }
 
             byte[] inputData = buffer.toByteArray();
-            try (InputStream inputStream1 = new ByteArrayInputStream(inputData);
-            InputStream inputStream2 = new ByteArrayInputStream(inputData)) {
+            try (
+                InputStream inputStream1 = new ByteArrayInputStream(inputData);
+                InputStream inputStream2 = new ByteArrayInputStream(inputData)
+            ) {
                 BigFileInfo record = parseBigFileInfo(inputStream1);
 
                 if (record != null && record.isRecordFile()) {
@@ -70,8 +75,10 @@ public class DownloadServiceImpl implements DownloadService {
                 return handleRegularFile(fileID, inputStream2, inputData);
             }
         } catch (IOException e) {
-            log.error("下载文件失败：" + e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            log.error("ดาวน์โหลดไฟล์ล้มเหลว：" + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                null
+            );
         } catch (NullPointerException e) {
             throw new BotNotSetException();
         }
@@ -83,8 +90,12 @@ public class DownloadServiceImpl implements DownloadService {
      * @param inputStream
      * @return
      */
-    private ResponseEntity<StreamingResponseBody> handleRegularFile(String fileID, InputStream inputStream, byte[] chunkData) {
-        log.info("文件不是记录文件，直接下载文件...");
+    private ResponseEntity<StreamingResponseBody> handleRegularFile(
+        String fileID,
+        InputStream inputStream,
+        byte[] chunkData
+    ) {
+        log.info("ไฟล์นี้ไม่ใช่ไฟล์บันทึก ให้ดาวน์โหลดไฟล์โดยตรง...");
 
         File file = botService.getFile(fileID);
         String filename = resolveFilename(fileID, file.filePath());
@@ -97,10 +108,10 @@ public class DownloadServiceImpl implements DownloadService {
                 if (!extension.isEmpty()) {
                     filename = filename + extension;
                 } else {
-                    log.error("未添加扩展名，扩展名检测失败");
+                    log.error("ไม่มีการเพิ่มส่วนขยาย การตรวจหาส่วนขยายล้มเหลว");
                 }
             } catch (Exception e) {
-                log.error("文件检测失败" + e.getCause().getMessage());
+                log.error("การตรวจหาไฟล์ล้มเหลว" + e.getCause().getMessage());
             }
         }
         long fullSize = file.fileSize();
@@ -112,9 +123,11 @@ public class DownloadServiceImpl implements DownloadService {
         };
 
         return ResponseEntity.ok()
-                .headers(headers)
-                .contentType(MediaType.parseMediaType(getContentTypeFromFilename(filename)))
-                .body(streamingResponseBody);
+            .headers(headers)
+            .contentType(
+                MediaType.parseMediaType(getContentTypeFromFilename(filename))
+            )
+            .body(streamingResponseBody);
     }
 
     private String getExtensionByMimeType(String mimeType) {
@@ -124,7 +137,7 @@ public class DownloadServiceImpl implements DownloadService {
             MimeType type = allTypes.forName(mimeType);
             return type.getExtension();
         } catch (Exception e) {
-            log.error("无法获取扩展名");
+            log.error("ไม่สามารถรับส่วนขยายได้");
             return "";
         }
     }
@@ -134,7 +147,10 @@ public class DownloadServiceImpl implements DownloadService {
      * @param inputStream
      * @param outputStream
      */
-    private void streamData(InputStream inputStream, OutputStream outputStream) {
+    private void streamData(
+        InputStream inputStream,
+        OutputStream outputStream
+    ) {
         try (InputStream is = inputStream) {
             byte[] buffer = new byte[4096];
             int byteRead;
@@ -144,7 +160,7 @@ public class DownloadServiceImpl implements DownloadService {
         } catch (IOException e) {
             handleClientAbortException(e);
         } catch (Exception e) {
-            log.info("文件下载终止");
+            log.info("การดาวน์โหลดไฟล์สิ้นสุดลง");
             log.info(e.getMessage(), e);
         }
     }
@@ -155,9 +171,12 @@ public class DownloadServiceImpl implements DownloadService {
      * @param record
      * @return
      */
-    private ResponseEntity<StreamingResponseBody> handleRecordFile(String fileID, BigFileInfo record) {
-        log.info("文件名为：" + record.getFileName());
-        log.info("检测到记录文件，开始下载并合并分片文件...");
+    private ResponseEntity<StreamingResponseBody> handleRecordFile(
+        String fileID,
+        BigFileInfo record
+    ) {
+        log.info("ชื่อไฟล์คือ：" + record.getFileName());
+        log.info("ตรวจพบไฟล์บันทึก, เริ่มดาวน์โหลดและรวมไฟล์ชิ้นส่วน...");
 
         String filename = resolveFilename(fileID, record.getFileName());
         Long fullSize = fileMapper.getFullSizeByFileId(fileID);
@@ -171,9 +190,11 @@ public class DownloadServiceImpl implements DownloadService {
         };
 
         return ResponseEntity.ok()
-                .headers(headers)
-                .contentType(MediaType.parseMediaType(getContentTypeFromFilename(filename)))
-                .body(streamingResponseBody);
+            .headers(headers)
+            .contentType(
+                MediaType.parseMediaType(getContentTypeFromFilename(filename))
+            )
+            .body(streamingResponseBody);
     }
 
     /**
@@ -181,11 +202,18 @@ public class DownloadServiceImpl implements DownloadService {
      * @param partFileIds
      * @param outputStream
      */
-    private void downloadAndMergeFileParts(List<String> partFileIds, OutputStream outputStream) {
+    private void downloadAndMergeFileParts(
+        List<String> partFileIds,
+        OutputStream outputStream
+    ) {
         int maxConcurrentDownloads = 3; // 最大并发下载数
-        ExecutorService executorService = Executors.newFixedThreadPool(maxConcurrentDownloads);
+        ExecutorService executorService = Executors.newFixedThreadPool(
+            maxConcurrentDownloads
+        );
 
-        List<PipedInputStream> pipedInputStreams = new ArrayList<>(partFileIds.size());
+        List<PipedInputStream> pipedInputStreams = new ArrayList<>(
+            partFileIds.size()
+        );
         CountDownLatch latch = new CountDownLatch(partFileIds.size());
 
         try {
@@ -196,15 +224,24 @@ public class DownloadServiceImpl implements DownloadService {
             for (int i = 0; i < partFileIds.size(); i++) {
                 final int index = i;
                 final String partFileId = partFileIds.get(i);
-                final PipedInputStream pipedInputStream = pipedInputStreams.get(index);
-                final PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+                final PipedInputStream pipedInputStream = pipedInputStreams.get(
+                    index
+                );
+                final PipedOutputStream pipedOutputStream =
+                    new PipedOutputStream(pipedInputStream);
 
                 executorService.submit(() -> {
-                    try (InputStream partInputStream = downloadFileByte(partFileId).byteStream();
-                         OutputStream pos = pipedOutputStream) {
+                    try (
+                        InputStream partInputStream = downloadFileByte(
+                            partFileId
+                        ).byteStream();
+                        OutputStream pos = pipedOutputStream
+                    ) {
                         byte[] buffer = new byte[8192];
                         int bytesRead;
-                        while ((bytesRead = partInputStream.read(buffer)) != -1) {
+                        while (
+                            (bytesRead = partInputStream.read(buffer)) != -1
+                        ) {
                             pos.write(buffer, 0, bytesRead);
                             pos.flush();
                         }
@@ -243,10 +280,17 @@ public class DownloadServiceImpl implements DownloadService {
      */
     private void handleClientAbortException(IOException e) {
         String message = e.getMessage();
-        if (message != null && (message.contains("An established connection was aborted") || message.contains("你的主机中的软件中止了一个已建立的连接"))) {
-            log.info("客户端中止了连接：{}", message);
+        if (
+            message != null &&
+            (message.contains("An established connection was aborted") ||
+                message.contains("你的主机中的软件中止了一个已建立的连接"))
+        ) {
+            log.info("ไคลเอนต์ยกเลิกการเชื่อมต่อ: {}", message);
         } else {
-            log.error("写入输出流时发生 IOException", e);
+            log.error(
+                "เกิดข้อผิดพลาด IOException ขณะเขียนไปยัง OutputStream",
+                e
+            );
             throw new RuntimeException(e);
         }
     }
@@ -273,7 +317,10 @@ public class DownloadServiceImpl implements DownloadService {
      */
     private BigFileInfo parseBigFileInfo(InputStream inputStream) {
         try {
-            String fileContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            String fileContent = new String(
+                inputStream.readAllBytes(),
+                StandardCharsets.UTF_8
+            );
             return JSON.parseObject(fileContent, BigFileInfo.class);
         } catch (Exception e) {
             log.info("文件不是 BigFileInfo类型，作为普通文件处理");
@@ -287,14 +334,12 @@ public class DownloadServiceImpl implements DownloadService {
      * @return
      * @throws IOException
      */
-    private InputStream downloadFileInputStream(String fileID) throws IOException {
+    private InputStream downloadFileInputStream(String fileID)
+        throws IOException {
         File file = botService.getFile(fileID);
         String fileUrl = botService.getFullDownloadPath(file);
 
-        Request request = new Request.Builder()
-                .url(fileUrl)
-                .get()
-                .build();
+        Request request = new Request.Builder().url(fileUrl).get().build();
 
         Response response = okHttpClient.newCall(request).execute();
 
@@ -328,14 +373,28 @@ public class DownloadServiceImpl implements DownloadService {
                 headers.setContentLength(size);
             }
 
-            if (contentType.startsWith("image/") || contentType.startsWith("video/")) {
+            if (
+                contentType.startsWith("image/") ||
+                contentType.startsWith("video/")
+            ) {
                 // 对于图片和视频，设置 Content-Disposition 为 inline
-                headers.setContentDisposition(ContentDisposition.inline().filename(filename, StandardCharsets.UTF_8).build());
+                headers.setContentDisposition(
+                    ContentDisposition.inline()
+                        .filename(filename, StandardCharsets.UTF_8)
+                        .build()
+                );
             } else {
                 // 使用 URLEncoder 编码文件名，确保支持中文
-                String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8.toString()).replace("+", "%20");
-                String contentDisposition = "attachment; filename*=UTF-8''" + encodedFilename;
-                headers.set(HttpHeaders.CONTENT_DISPOSITION, contentDisposition);
+                String encodedFilename = URLEncoder.encode(
+                    filename,
+                    StandardCharsets.UTF_8.toString()
+                ).replace("+", "%20");
+                String contentDisposition =
+                    "attachment; filename*=UTF-8''" + encodedFilename;
+                headers.set(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    contentDisposition
+                );
             }
         } catch (UnsupportedEncodingException e) {
             log.error("不支持的编码");
@@ -350,18 +409,21 @@ public class DownloadServiceImpl implements DownloadService {
      * @return
      * @throws IOException
      */
-    private ResponseBody downloadFileByte(String partFileId) throws IOException {
+    private ResponseBody downloadFileByte(String partFileId)
+        throws IOException {
         File partFile = botService.getFile(partFileId);
         String partFileUrl = botService.getFullDownloadPath(partFile);
         Request partRequest = new Request.Builder()
-                .url(partFileUrl)
-                .get()
-                .build();
+            .url(partFileUrl)
+            .get()
+            .build();
 
         Response response = okHttpClient.newCall(partRequest).execute();
         if (!response.isSuccessful()) {
             log.error("无法下载分片文件，响应码：" + response.code());
-            throw new IOException("无法下载分片文件，响应码：" + response.code());
+            throw new IOException(
+                "无法下载分片文件，响应码：" + response.code()
+            );
         }
 
         ResponseBody responseBody = response.body();
@@ -385,7 +447,10 @@ public class DownloadServiceImpl implements DownloadService {
         try {
             contentType = Files.probeContentType(path);
         } catch (IOException e) {
-            log.warn("无法通过 Files.probeContentType 获取 MIME 类型: " + e.getMessage());
+            log.warn(
+                "无法通过 Files.probeContentType 获取 MIME 类型: " +
+                e.getMessage()
+            );
         }
 
         if (contentType == null) {

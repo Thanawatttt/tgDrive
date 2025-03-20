@@ -1,9 +1,11 @@
 package com.skydevs.tgdrive.exception;
 
-public class NoConnectionException extends BaseException{
+public class NoConnectionException extends BaseException {
+
     public NoConnectionException() {
-        super("请检查网络连接");
+        super("กรุณาตรวจสอบการเชื่อมต่อเครือข่าย");
     }
+
     public NoConnectionException(String msg) {
         super(msg);
     }

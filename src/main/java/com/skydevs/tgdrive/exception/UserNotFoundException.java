@@ -1,8 +1,9 @@
 package com.skydevs.tgdrive.exception;
 
 public class UserNotFoundException extends BaseException {
+
     public UserNotFoundException() {
-        super("用户不存在");
+        super("ไม่พบผู้ใช้");
     }
 
     public UserNotFoundException(String msg) {

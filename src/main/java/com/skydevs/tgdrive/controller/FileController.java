@@ -8,13 +8,11 @@ import com.skydevs.tgdrive.result.Result;
 import com.skydevs.tgdrive.service.BotService;
 import com.skydevs.tgdrive.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.concurrent.CompletableFuture;
-
 
 @RestController
 @Slf4j
@@ -23,9 +21,9 @@ public class FileController {
 
     @Autowired
     private BotService botService;
+
     @Autowired
     private FileService fileService;
-
 
     /**
      * 上传文件
@@ -34,12 +32,17 @@ public class FileController {
      * @return
      */
     @PostMapping("/upload")
-    public CompletableFuture<Result<UploadFile>> uploadFile(@RequestParam("file") MultipartFile multipartFile, HttpServletRequest request) {
+    public CompletableFuture<Result<UploadFile>> uploadFile(
+        @RequestParam("file") MultipartFile multipartFile,
+        HttpServletRequest request
+    ) {
         return CompletableFuture.supplyAsync(() -> {
             if (multipartFile == null || multipartFile.isEmpty()) {
-                return Result.error("上传的文件为空");
+                return Result.error("ไฟล์ที่อัปโหลดว่างเปล่า");
             }
-            return Result.success(botService.getUploadFile(multipartFile, request));
+            return Result.success(
+                botService.getUploadFile(multipartFile, request)
+            );
         });
     }
 
@@ -51,14 +54,13 @@ public class FileController {
      */
     @PostMapping("/send-message")
     public Result<String> sendMessage(@RequestBody Message message) {
-        log.info("处理消息发送");
+        log.info("ประมวลผลการส่งข้อความ");
         if (botService.sendMessage(message.getMessage())) {
-            return Result.success("消息发送成功: " + message);
+            return Result.success("ส่งข้อความสำเร็จ: " + message);
         } else {
-            return Result.error("消息发送失败");
+            return Result.error("การส่งข้อความล้มเหลว");
         }
     }
-
 
     /**
      * 获取文件列表
@@ -68,7 +70,10 @@ public class FileController {
      */
     @SaCheckLogin
     @GetMapping("/fileList")
-    public Result<PageResult> getFileList(@RequestParam int page, @RequestParam int size) {
+    public Result<PageResult> getFileList(
+        @RequestParam int page,
+        @RequestParam int size
+    ) {
         PageResult pageResult = fileService.getFileList(page, size);
         return Result.success(pageResult);
     }
@@ -80,7 +85,7 @@ public class FileController {
     @SaCheckLogin
     @PutMapping("/file-url")
     public Result updateFileUrl(HttpServletRequest request) {
-        log.info("更新文件url");
+        log.info("อัปเดต URL ของไฟล์");
         fileService.updateUrl(request);
         return Result.success();
     }

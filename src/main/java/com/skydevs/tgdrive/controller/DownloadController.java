@@ -22,7 +22,7 @@ public class DownloadController {
 
     @GetMapping("/{fileID}")
     public CompletableFuture<ResponseEntity<StreamingResponseBody>> downloadFile(@PathVariable String fileID) {
-        log.info("接收到下载请求，fileID: " + fileID);
+        log.info("ได้รับคำขอดาวโหลดของไฟล์，fileID: " + fileID);
         return CompletableFuture.supplyAsync(() -> downloadService.downloadFile(fileID));
     }
 

@@ -18,42 +18,51 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RequestMapping("/api/auth")
 public class UserController {
+
     @Autowired
     private UserService userService;
 
     /**
-     * 用户登入
-     * @param authRequest 用户名、密码
-     * @return 登入状态
+     * เข้าสู่ระบบผู้ใช้
+     * @param authRequest ชื่อผู้ใช้และรหัสผ่าน
+     * @return สถานะการเข้าสู่ระบบ
      */
     @PostMapping("/login")
     public Result<UserLogin> login(@RequestBody AuthRequest authRequest) {
-        // 验证用户名和密码
+        // ตรวจสอบชื่อผู้ใช้และรหัสผ่าน
         User user = userService.login(authRequest);
 
+        // ทำการล็อกอินโดยใช้ Sa-Token
         StpUtil.login(user.getId());
         UserLogin userLogin = UserLogin.builder()
-                .UserId(user.getId())
-                .token(StpUtil.getTokenValue())
-                .role(user.getRole())
-                .build();
+            .UserId(user.getId())
+            .token(StpUtil.getTokenValue())
+            .role(user.getRole())
+            .build();
 
-        log.info(user.getId() + "登入");
+        log.info(user.getId() + " ได้เข้าสู่ระบบ");
         return Result.success(userLogin);
     }
 
     /**
-     * 修改密码
-     * @param changePasswordRequest 修改密码请求
-     * @return
+     * เปลี่ยนรหัสผ่าน
+     * @param changePasswordRequest คำขอเปลี่ยนรหัสผ่าน
+     * @return ผลลัพธ์ของการเปลี่ยนรหัสผ่าน
      */
     @PostMapping("change-password")
-    public Result<String> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+    public Result<String> changePassword(
+        @RequestBody ChangePasswordRequest changePasswordRequest
+    ) {
         long userId = StpUtil.getLoginIdAsLong();
 
         userService.changePassword(changePasswordRequest);
 
-        log.info(userId + "密码修改" + changePasswordRequest.getUsername() + "成功");
-        return Result.success("密码修改成功");
+        log.info(
+            userId +
+            " เปลี่ยนรหัสผ่านของ " +
+            changePasswordRequest.getUsername() +
+            " สำเร็จ"
+        );
+        return Result.success("เปลี่ยนรหัสผ่านสำเร็จ");
     }
 }

@@ -32,10 +32,10 @@ public class ConfigController {
     public Result<ConfigForm> getConfig(@RequestParam String name) {
         ConfigForm config = configService.get(name);
         if (config == null) {
-            log.error("配置获取失败，请检查文件名是否错误");
+            log.error("การรับการกำหนดค่าล้มเหลว โปรดตรวจสอบว่าชื่อไฟล์ผิดหรือไม่");
             throw new ConfigFileNotFoundException();
         }
-        log.info("获取数据成功");
+        log.info("รับข้อมูลสำเร็จ");
         return Result.success(config);
     }
 
@@ -59,8 +59,8 @@ public class ConfigController {
     @PostMapping()
     public Result<String> submitConfig(@RequestBody ConfigForm configForm) {
         configService.save(configForm);
-        log.info("配置保存成功");
-        return Result.success("配置保存成功");
+        log.info("บันทึกการกำหนดค่าเรียบร้อยแล้ว");
+        return Result.success("บันทึกการกำหนดค่าเรียบร้อยแล้ว");
     }
 
     /**
@@ -73,7 +73,7 @@ public class ConfigController {
     @GetMapping("/{filename}")
     public Result<String> loadConfig(@PathVariable("filename") String filename) {
         botService.setBotToken(filename);
-        log.info("加载配置成功");
-        return Result.success("配置加载成功");
+        log.info("กำลังโหลดการกำหนดค่าสำเร็จ");
+        return Result.success("โหลดการกำหนดค่าเรียบร้อยแล้ว");
     }
 }
