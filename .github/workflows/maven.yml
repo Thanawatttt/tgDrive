@@ -50,8 +50,11 @@ jobs:
         name: build-output
         path: ./build
 
+    - name: List files in build directory
+      run: ls -al build
+
     - name: Unzip build output
-      run: unzip build/c70ffde6c4269f6436eee0705b70ececf548f8a3603eab2de875c6b08b8e192c.zip -d build
+      run: unzip build/*.zip -d build
 
     - name: Create GitHub Release
       id: create_release
