@@ -35,7 +35,7 @@ jobs:
 
     # Archive the build output as a workflow artifact
     - name: Archive build output
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: build-output
         path: target/*.jar
