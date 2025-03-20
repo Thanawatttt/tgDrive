@@ -53,9 +53,6 @@ jobs:
     - name: List files in build directory
       run: ls -al build
 
-    - name: Unzip build output
-      run: unzip build/*.zip -d build
-
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
@@ -73,6 +70,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./build/target/*.jar
-        asset_name: my-java-app.jar
+        asset_path: ./build/tgDrive-0.0.9.jar
+        asset_name: tgDrive-0.0.9.jar
         asset_content_type: application/java-archive
